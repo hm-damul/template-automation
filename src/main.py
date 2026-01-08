@@ -17,7 +17,7 @@ from typing import Dict, List, Optional, Any
 from pathlib import Path
 
 # ✅ 자동 경로 설정 (이 부분이 핵심!)
-PROJECT_ROOT = Path(__file__).parent.parent
+PROJECT_ROOT = Path(__file__).parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -50,7 +50,7 @@ class TemplateAutomationOrchestrator:
         
         # 1. AI 템플릿 생성기 (직접 생성)
         try:
-            from src.ai.template_generator import TemplateAIGenerator
+            from ai.template_generator import TemplateAIGenerator
             self.ai_generator = TemplateAIGenerator()
             logger.info("✅ AI Template Generator loaded")
         except Exception as e:
@@ -59,7 +59,7 @@ class TemplateAutomationOrchestrator:
         
         # 2. 다국어 지원
         try:
-            from src.ai.multilingual import multilingual_manager
+            from ai.multilingual import multilingual_manager
             self.multilingual = multilingual_manager
             logger.info("✅ Multilingual Support loaded (5 languages)")
         except ImportError:
@@ -68,9 +68,9 @@ class TemplateAutomationOrchestrator:
         
         # 3. 플랫폼 자동화
         try:
-            from src.platforms.gumroad import gumroad_automation
-            from src.platforms.lemon_squeezy import lemon_squeezy_automation
-            from src.platforms.additional_platforms import platform_expansion
+            from platforms.gumroad import gumroad_automation
+            from platforms.lemon_squeezy import lemon_squeezy_automation
+            from platforms.additional_platforms import platform_expansion
             self.gumroad = gumroad_automation
             self.lemon_squeezy = lemon_squeezy_automation
             self.platform_expansion = platform_expansion
@@ -83,7 +83,7 @@ class TemplateAutomationOrchestrator:
         
         # 4. 품질 보장
         try:
-            from src.qa.quality_assurance import qa_system
+            from qa.quality_assurance import qa_system
             self.qa = qa_system
             logger.info("✅ Quality Assurance System loaded")
         except ImportError:
@@ -92,7 +92,7 @@ class TemplateAutomationOrchestrator:
         
         # 5. 암호화페 결제
         try:
-            from src.payments.multi_wallet_crypto import crypto_optimizer
+            from payments.multi_wallet_crypto import crypto_optimizer
             self.crypto = crypto_optimizer
             logger.info("✅ Crypto Payment System loaded")
         except ImportError:
@@ -101,7 +101,7 @@ class TemplateAutomationOrchestrator:
         
         # 6. 마케팅 자동화
         try:
-            from src.marketing.automation import marketing_automation
+            from marketing.automation import marketing_automation
             self.marketing = marketing_automation
             logger.info("✅ Marketing Automation loaded (TikTok, YouTube, Telegram, Discord, Email)")
         except ImportError:
@@ -110,7 +110,7 @@ class TemplateAutomationOrchestrator:
         
         # 7. 경쟁사 분석
         try:
-            from src.analytics.competitor_analysis import competitor_analyzer, trend_analyzer, free_ai_generator
+            from analytics.competitor_analysis import competitor_analyzer, trend_analyzer, free_ai_generator
             self.competitor = competitor_analyzer
             self.trends = trend_analyzer
             self.ai_images = free_ai_generator
@@ -123,7 +123,7 @@ class TemplateAutomationOrchestrator:
         
         # 8. 모니터링
         try:
-            from src.monitoring.monitor import monitoring_system
+            from monitoring.monitor import monitoring_system
             self.monitor = monitoring_system
             logger.info("✅ Monitoring System loaded")
         except ImportError:
@@ -276,7 +276,7 @@ class TemplateAutomationOrchestrator:
             return self.ai_generator.analyze_trends_and_decide(market_data)
         
         # 폴백
-        from src.ai.template_generator import TrendAnalysis, TemplateType
+        from ai.template_generator import TrendAnalysis, TemplateType
         return TrendAnalysis(
             niche="AI Productivity System",
             trend_score=0.92,
@@ -307,7 +307,7 @@ class TemplateAutomationOrchestrator:
                 "template_id": template_data.get("id", str(datetime.now().timestamp()))
             })
         
-        from src.qa.quality_assurance import QAReport
+        from qa.quality_assurance import QAReport
         return QAReport(
             template_id=template_data.get("id", "unknown"),
             passed=True,

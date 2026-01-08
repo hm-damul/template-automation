@@ -1,0 +1,307 @@
+{
+  "meta": {
+    "instanceId": "template_automation_production_v1",
+    "createdAt": "2024-01-08T00:00:00Z",
+    "version": "1.0.0",
+    "description": "24/7 Template Automation Production System"
+  },
+  "name": "Template Automation - Production Master Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "hourly": {
+            "enabled": true,
+            "minute": 0
+          },
+          "dayOfWeek": {
+            "enabled": true,
+            "day": [0, 1, 2, 3, 4, 5, 6]
+          }
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.schedule",
+      "typeVersion": 1,
+      "position": [100, 300],
+      "settings": {
+        "description": "Runs every hour - 24/7 automation"
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://localhost:5000/health",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "health-check",
+      "name": "Health Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [300, 300],
+      "settings": {
+        "description": "Check daemon health status"
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5000/run",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "run-automation",
+      "name": "Run Automation Cycle",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [500, 300],
+      "settings": {
+        "description": "Execute one automation cycle"
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.DISCORD_WEBHOOK_URL }}",
+        "options": {
+          "content": "={{ '✅ Automation Cycle Completed\\n📊 Templates: ' + $json.templates_processed + '\\n💰 Revenue: $' + $json.revenue_generated + '\\n🌐 Platforms: ' + $json.platforms_reached + '\\n🌍 Languages: ' + $json.languages_reached }}"
+        }
+      },
+      "id": "discord-success",
+      "name": "Discord Success Notification",
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 1,
+      "position": [700, 200],
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "discord-webhook",
+          "name": "Discord Webhook"
+        }
+      },
+      "settings": {
+        "description": "Send success notification to Discord"
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.DISCORD_WEBHOOK_URL }}",
+        "options": {
+          "content": "={{ '❌ Automation Cycle Failed\\n⚠️ Error: ' + $json.error + '\\n🔄 Will retry in next cycle' }}"
+        }
+      },
+      "id": "discord-failure",
+      "name": "Discord Failure Notification",
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 1,
+      "position": [700, 400],
+      "settings": {
+        "description": "Send failure notification to Discord"
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.OPENAI_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "gpt-4o-mini"
+            },
+            {
+              "name": "messages",
+              "value": "[{\"role\": \"user\", \"content\": \"Analyze this automation cycle result and provide insights for improvement: {{ $json }}\"}]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ai-analysis",
+      "name": "AI Cycle Analysis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [900, 300],
+      "settings": {
+        "description": "AI analysis of cycle results"
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.supabase.com/rest/v1/rpc/insert_cycle_report",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "{{ $env.SUPABASE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "cycle_data",
+              "value": "{{ $json }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "save-to-database",
+      "name": "Save to Database",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1100, 300],
+      "settings": {
+        "description": "Save cycle results to Supabase"
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "{{ $env.TELEGRAM_CHAT_ID }}"
+            },
+            {
+              "name": "text",
+              "value": "🔄 Automation Cycle Complete\\n\\n✅ Templates: {{ $json.templates_processed }}\\n💵 Revenue: ${{ $json.revenue_generated }}\\n🌐 Platforms: {{ $json.platforms_reached }}\\n🌍 Languages: {{ $json.languages_reached }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "telegram-notification",
+      "name": "Telegram Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [700, 600],
+      "settings": {
+        "description": "Send Telegram notification"
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Health Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Health Check": {
+      "main": [
+        [
+          {
+            "node": "Run Automation Cycle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Automation Cycle": {
+      "main": [
+        [
+          {
+            "node": "Discord Success Notification",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AI Cycle Analysis",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Telegram Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Cycle Analysis": {
+      "main": [
+        [
+          {
+            "node": "Save to Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discord Success Notification": {
+      "main": [
+        [
+          {
+            "node": "Save to Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Notification": {
+      "main": [
+        [
+          {
+            "node": "Save to Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "any",
+    "timeout": 300000
+  },
+  "active": true
+}

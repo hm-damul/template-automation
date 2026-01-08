@@ -1,0 +1,352 @@
+{
+  "meta": {
+    "instanceId": "template_automation_v1",
+    "createdAt": "2024-01-08T00:00:00Z",
+    "version": "1.0.0"
+  },
+  "name": "Template Automation Master Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour"
+            }
+          ]
+        },
+        "triggerOn": "webhook"
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.schedule",
+      "typeVersion": 1,
+      "position": [100, 200],
+      "settings": {
+        "rule": {
+          "hourly": {
+            "enabled": true,
+            "minute": 0
+          },
+          "daily": {
+            "enabled": true,
+            "hour": 8,
+            "minute": 0
+          }
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.gumroad.com/v2/products?limit=10",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "fetch-gumroad-trends",
+      "name": "Fetch Gumroad Trends",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [300, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "gumroad-api-key",
+          "name": "Gumroad API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://openapi.etsy.com/v3/application/shops/{shop_id}/listings/active",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "fetch-etsy-trends",
+      "name": "Fetch Etsy Trends",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [300, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "etsy-api-key",
+          "name": "Etsy API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "messages": {
+          "values": [
+            {
+              "content": "={{ JSON.stringify($json) }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "id": "ai-trend-analysis",
+      "name": "AI Trend Analysis",
+      "type": "n8n-nodes-base.openAiChat",
+      "typeVersion": 1,
+      "position": [500, 250],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-api-key",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json.niche + '에 맞는 템플릿 스펙을 생성해줘. JSON 형식으로: name, description, features, price_tier, estimated_price' }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.8
+        }
+      },
+      "id": "generate-template-spec",
+      "name": "Generate Template Spec",
+      "type": "n8n-nodes-base.openAiChat",
+      "typeVersion": 1,
+      "position": [700, 250],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-api-key",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "dall-e-3",
+        "prompt": "={{ $json.name + ' 템플릿 디자인. 전문적이고 현대적인 디자인. '+ $json.description }}",
+        "size": "1024x1024",
+        "quality": "standard",
+        "n": 1
+      },
+      "id": "generate-design",
+      "name": "Generate Design",
+      "type": "n8n-nodes-base.openAiImageGeneration",
+      "typeVersion": 1,
+      "position": [900, 250],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-api-key",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "product",
+        "operation": "create",
+        "name": "={{ $json.name }}",
+        "description": "={{ $json.description }}",
+        "price": "={{ $json.estimated_price }}",
+        "currency": "USD",
+        "tags": "={{ $json.features.join(', ') }}"
+      },
+      "id": "publish-gumroad",
+      "name": "Publish to Gumroad",
+      "type": "n8n-nodes-base.gumroad",
+      "typeVersion": 1,
+      "position": [1100, 200],
+      "credentials": {
+        "gumroadApi": {
+          "id": "gumroad-api-key",
+          "name": "Gumroad API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "product",
+        "operation": "create",
+        "name": "={{ $json.name }}",
+        "description": "={{ $json.description }}",
+        "price": "={{ $json.estimated_price * 100 }}",
+        "storeId": "={{ $node['Lemon Squeezy Setup'].json.store_id }}"
+      },
+      "id": "publish-lemon-squeezy",
+      "name": "Publish to Lemon Squeezy",
+      "type": "n8n-nodes-base.lemonSqueezy",
+      "typeVersion": 1,
+      "position": [1100, 300],
+      "credentials": {
+        "lemonSqueezyApi": {
+          "id": "lemon-squeezy-api-key",
+          "name": "Lemon Squeezy API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.DISCORD_WEBHOOK_URL }}",
+        "options": {
+          "content": "={{ '✅ 새 템플릿 배포 완료: ' + $json.name + ' ($' + $json.estimated_price + ')' }}"
+        }
+      },
+      "id": "discord-notification",
+      "name": "Discord Notification",
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 1,
+      "position": [1300, 250]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.GOOGLE_SHEET_ID }}",
+        "range": "A:E",
+        "operation": "append",
+        "options": {}
+      },
+      "id": "update-spreadsheet",
+      "name": "Update Spreadsheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1300, 350],
+      "credentials": {
+        "googleSheetsOAuth2": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets OAuth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.stripe.com/v1/balance",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "check-revenue",
+      "name": "Check Revenue",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1300, 150],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "stripe-api-key",
+          "name": "Stripe API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Gumroad Trends",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Etsy Trends",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Gumroad Trends": {
+      "main": [
+        [
+          {
+            "node": "AI Trend Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Etsy Trends": {
+      "main": [
+        [
+          {
+            "node": "AI Trend Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Trend Analysis": {
+      "main": [
+        [
+          {
+            "node": "Generate Template Spec",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Template Spec": {
+      "main": [
+        [
+          {
+            "node": "Generate Design",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Design": {
+      "main": [
+        [
+          {
+            "node": "Publish to Gumroad",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Publish to Lemon Squeezy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish to Gumroad": {
+      "main": [
+        [
+          {
+            "node": "Discord Notification",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Spreadsheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Revenue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "any"
+  },
+  "active": false
+}

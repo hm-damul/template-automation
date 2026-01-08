@@ -16,10 +16,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY src/ ./src/
+COPY . .
 
-RUN mkdir -p /app/logs /app/reports && chmod 777 /app/logs /app/reports
+RUN mkdir -p logs reports && chmod 777 logs reports
 
 EXPOSE 5000
 
-CMD ["python", "src/daemon.py"]
+CMD ["python", "daemon.py"]
