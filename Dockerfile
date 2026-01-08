@@ -28,7 +28,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # 소스 코드 복사
 COPY src/ ./src/
-COPY n8n/ ./n8n/
+
+# n8n 폴더 구조 생성 (대시보드용)
+RUN mkdir -p /app/n8n/workflows && touch /app/n8n/workflows/placeholder.json
+
 COPY .env.example .env
 
 # logs 및 reports 디렉토리 생성
