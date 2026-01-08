@@ -1,79 +1,22 @@
-# 의존성 패키지 목록
-# 완전 자동화 글로벌 비즈니스 시스템
+# Template Automation System - Dependencies
 
-# 웹 자동화
-selenium>=4.15.0
-webdriver-manager>=4.0.0
+requests >= 2.31.0
+python-dotenv >= 1.0.0
+loguru >= 0.7.0
+pyyaml >= 6.0.0
+python-dateutil >= 2.8.0
 
-# HTTP 요청
-requests>=2.31.0
-beautifulsoup4>=4.12.0
+openai >= 1.0.0
+anthropic >= 0.3.0
 
-# 데이터 처리
-pandas>=2.1.0
-numpy>=1.24.0
+supabase >= 1.0.0
 
-# 대시보드
-streamlit>=1.28.0
-plotly>=5.17.0
-plotly-express>=0.4.1
+Pillow >= 10.0.0
 
-# 데이터베이스
-sqlite3  # Python 내장
-sqlalchemy>=2.0.0
+reportlab >= 4.0.0
+jinja2 >= 3.1.0
 
-# 비동기 처리
-asyncio  # Python 내장
-aiohttp>=3.9.0
+apscheduler >= 3.10.0
 
-# 이미지/문서 처리
-pillow>=10.1.0
-python-docx>=1.1.0
-reportlab>=4.0.0
-
-# 암호화
-cryptography>=41.0.0
-pycryptodome>=3.19.0
-
-# 날짜/시간
-python-dateutil>=2.8.0
-pytz>=2023.3
-
-# 로깅
-loguru>=0.7.2
-
-# 설정 관리
-pydantic>=2.5.0
-python-dotenv>=1.0.0
-
-# 테스팅
-pytest>=7.4.0
-pytest-asyncio>=0.21.0
-
-# 개발 도구
-black>=23.11.0
-flake8>=6.1.0
-
-# API 클라이언트
-openai>=1.3.0
-google-generativeai>=0.3.0
-huggingface-hub>=0.19.0
-
-# 프록시 관리
-requests-proxy>=0.1.0
-socks5>=1.0.0
-
-# 캡차 해결 (선택적)
-2captcha-python>=0.3.0
-
-# 클라우드 상호작용 (선택적)
-boto3>=1.34.0  # AWS
-google-cloud-storage>=2.10.0  # Google Cloud
-
-# 이메일 처리
-imap-tools>=1.0.0
-smtplib  # Python 내장
-
-# 파일 처리
-watchdog>=3.0.0
-tqdm>=4.66.0
+pytest >= 7.4.0
+pytest-asyncio >= 0.21.0
